@@ -1,82 +1,41 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useState } from "react";
 
-const ChatPage = ({ user }) => {
-  const [question, setQuestion] = useState("");
-  const [response, setResponse] = useState("");
-  const [isListening, setIsListening] = useState(false);
+const ChatPage = () => {
+  const [recognizedSpeaker, setRecognizedSpeaker] = useState(null);
 
-  useEffect(() => {
-    speak(`Hello ${user}, you can ask me anything.`);
-  }, [user]);
+  const analyzeVoice = (inputVoice) => {
+    const storedUsers = JSON.parse(localStorage.getItem("userVoiceData")) || [];
+    let bestMatch = null;
+    let bestScore = 0;
 
-  const speak = (text) => {
-    const synth = window.speechSynthesis;
-    const utterance = new SpeechSynthesisUtterance(text);
-    synth.speak(utterance);
-  };
-
-  const startListening = () => {
-    if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
-      alert("Speech recognition is not supported in this browser.");
-      return;
-    }
-
-    setIsListening(true);
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = "en-US";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-
-    recognition.onresult = async (event) => {
-      const speechText = event.results[0][0].transcript.toLowerCase();
-      setQuestion(speechText);
-      fetchAnswer(speechText);
-      setIsListening(false);
-    };
-
-    recognition.onerror = (event) => {
-      alert("Error in speech recognition: " + event.error);
-      setIsListening(false);
-    };
-
-    recognition.start();
-  };
-
-  const fetchAnswer = async (query) => {
-    try {
-      // Encode query properly for Wikipedia API
-      const encodedQuery = encodeURIComponent(query);
-      const wikipediaUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodedQuery}`;
-  
-      const res = await axios.get(wikipediaUrl);
-  
-      if (res.data.type === "disambiguation") {
-        setResponse("The topic has multiple meanings. Please be more specific.");
-        speak("The topic has multiple meanings. Please be more specific.");
-      } else if (res.data.extract) {
-        setResponse(res.data.extract);
-        speak(res.data.extract);
-      } else {
-        setResponse("I couldn't find any information.");
-        speak("I couldn't find any information.");
+    storedUsers.forEach(user => {
+      let similarity = inputVoice.includes(user.voiceSample) ? 1 : 0; // Simple Matching
+      if (similarity > bestScore) {
+        bestScore = similarity;
+        bestMatch = user;
       }
-    } catch (error) {
-      console.error("Error fetching information:", error);
-      setResponse("Sorry, there was an error fetching information.");
-      speak("Sorry, there was an error fetching information.");
-    }
+    });
+
+    return bestMatch;
   };
-  
+
+  const askQuestion = () => {
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.start();
+    recognition.onresult = (event) => {
+      const question = event.results[0][0].transcript;
+      const matchedUser = analyzeVoice(question);
+      if (matchedUser) {
+        setRecognizedSpeaker(matchedUser.name);
+      }
+    };
+  };
 
   return (
-    <div style={{ textAlign: "center", padding: "20px" }}>
-             <h1>Hiruba</h1>
-      <h1>🔊 Voice Assistant</h1>
-      <p><b>User:</b> {user}</p>
-      <p><b>Question:</b> {question}</p>
-      <p><b>Response:</b> {response}</p>
-      <button onClick={startListening} disabled={isListening}>🎤 Ask a Question</button>
+    <div>
+      <h2>Ask a Question</h2>
+      <button onClick={askQuestion}>Start Listening</button>
+      {recognizedSpeaker && <p>Question Asked by: {recognizedSpeaker}</p>}
     </div>
   );
 };

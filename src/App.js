@@ -1,19 +1,15 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import VoiceTrainingPage from "./VoiceTrainingPage";
 import VoiceRecognition from "./VoiceRecognition";
-import ChatPage from "./ChatPage";
 
-function App() {
-  const [user, setUser] = React.useState("");
-
+const App = () => {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<VoiceRecognition setUser={setUser} />} />
-        <Route path="/chat" element={<ChatPage user={user} />} />
-      </Routes>
-    </Router>
+    <div>
+      <h1>Hiruba Voice Training & Recognition</h1>
+      <VoiceTrainingPage />
+      <VoiceRecognition />
+    </div>
   );
-}
+};
 
 export default App;
