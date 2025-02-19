@@ -37,6 +37,7 @@ const VoiceRecognition = ({ setUser }) => {
 
   return (
     <div style={{ textAlign: "center", padding: "20px" }}>
+        <h1>Hiruba</h1>
       <h1>🎙 Identify Yourself</h1>
       <p><b>Detected Speaker:</b> {speaker}</p>
       <button onClick={startListening}>🎤 Speak Your Name</button>

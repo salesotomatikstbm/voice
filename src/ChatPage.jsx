@@ -71,6 +71,7 @@ const ChatPage = ({ user }) => {
 
   return (
     <div style={{ textAlign: "center", padding: "20px" }}>
+             <h1>Hiruba</h1>
       <h1>🔊 Voice Assistant</h1>
       <p><b>User:</b> {user}</p>
       <p><b>Question:</b> {question}</p>
