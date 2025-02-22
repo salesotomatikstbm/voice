@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import * as tf from "@tensorflow/tfjs";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const VoiceRecognition = () => {
   const [recognizedUser, setRecognizedUser] = useState(null);
@@ -39,33 +40,17 @@ const VoiceRecognition = () => {
 
   const fetchWikipedia = async (query) => {
     try {
-      const response = await fetch(
-        `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`
-      );
+      const response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+      
+      if (!response.ok) {
+        return "Error fetching Wikipedia data.";
+      }
+      
       const data = await response.json();
-      return data.extract || "I couldn't find anything on Wikipedia.";
+      return data.extract || "No relevant information found on Wikipedia.";
     } catch (error) {
-      return "There was an error fetching data from Wikipedia.";
-    }
-  };
-
-  const fetchChatGPT = async (query) => {
-    try {
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer YOUR_OPENAI_API_KEY`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4",
-          messages: [{ role: "user", content: query }],
-        }),
-      });
-      const data = await response.json();
-      return data.choices[0].message.content || "I couldn't get a response from ChatGPT.";
-    } catch (error) {
-      return "There was an error fetching data from ChatGPT.";
+      console.error("Network Error:", error);
+      return "There was a network error fetching data from Wikipedia.";
     }
   };
 
@@ -75,24 +60,10 @@ const VoiceRecognition = () => {
     synth.speak(utterance);
   };
 
-  const processQuestion = async (question) => {
-    setResponse("Processing...");
-
-    let answer;
-    if (question.toLowerCase().startsWith("what is") || question.toLowerCase().startsWith("who is")) {
-      answer = await fetchWikipedia(question);
-    } else {
-      answer = await fetchChatGPT(question);
-    }
-    
-    setResponse(answer);
-    speakResponse(answer);
-  };
-
   const recognizeSpeaker = () => {
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.start();
-    
+
     recognition.onresult = async (event) => {
       const transcript = event.results[0][0].transcript;
       const matchedUser = await analyzeVoice(transcript);
@@ -111,27 +82,32 @@ const VoiceRecognition = () => {
   const listenForQuestion = () => {
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.start();
-    
+
     recognition.onresult = async (event) => {
       const question = event.results[0][0].transcript;
       setResponse(`You asked: ${question}`);
       speakResponse(`You asked: ${question}`);
-      await processQuestion(question);
+      const answer = await fetchWikipedia(question);
+      setResponse(answer);
+      speakResponse(answer);
       setTimeout(listenForQuestion, 5000);
     };
   };
 
   return (
-    <div>
-      <h2>Speak and Identify</h2>
-      <button onClick={recognizeSpeaker}>Start Listening</button>
-      {recognizedUser && (
-        <p>
-          <strong>Name:</strong> {recognizedUser.name} <br />
-          <strong>Designation:</strong> {recognizedUser.designation}
-        </p>
-      )}
-      {response && <p><strong>Response:</strong> {response}</p>}
+    <div className="container mt-5">
+      <div className="card shadow p-4 text-center">
+        <h2 className="mb-4">Speak and Identify</h2>
+        <button className="btn btn-primary mb-3" onClick={recognizeSpeaker}>Voice Recognition System
+        </button>
+        {recognizedUser && (
+          <div className="alert alert-info">
+            <strong>Name:</strong> {recognizedUser.name} <br />
+            <strong>Designation:</strong> {recognizedUser.designation}
+          </div>
+        )}
+        {response && <div className="alert alert-success"><strong>Response:</strong> {response}</div>}
+      </div>
     </div>
   );
 };
